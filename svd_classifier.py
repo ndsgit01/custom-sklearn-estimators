@@ -52,7 +52,7 @@ class SVDClassifier(BaseEstimator, ClassifierMixin):
         """            
 
         X, y = check_X_y(X, y)
-        categories = unique_labels(y)
+        self.categories = unique_labels(y)
         
         def getApproxBasis(X_train, y_train, category):
             # get examples with category 'category'
@@ -67,7 +67,7 @@ class SVDClassifier(BaseEstimator, ClassifierMixin):
             return left_basis
         # find basis for each categories
         category_basis_matrices = [getApproxBasis(X, y, k) for k in categories]
-        # store residuals for every category
+        # store projection matrix to compute residuals for every category
         self.cat_residuals = [np.identity(X[0].shape[0]) - 
                               np.matmul(category_basis_matrices[k], 
                                         category_basis_matrices[k].T) 
@@ -91,17 +91,18 @@ class SVDClassifier(BaseEstimator, ClassifierMixin):
             Class labels for samples in X.
         """
         assert self.cat_residuals is not None
+        assert self.categories is not None
         X = check_array(X)
-        def find_closest(test_value, numeric_values):
+        def find_closest(test_value, pr_residuals):
             # find closest U_k to test_value using norm and return the 
             # corresponding label
             closest = np.inf
             label = None
-            for num, pr in enumerate(numeric_values):
+            for cat, pr in zip(self.categories, pr_residuals):
                 t_norm = np.linalg.norm(np.matmul(pr, test_value))
                 if t_norm < closest:
                     closest = t_norm
-                    label = num
+                    label = cat
             return label
         y_pred = [find_closest(tv, self.cat_residuals) for tv in X]
         return y_pred
