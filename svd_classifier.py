@@ -54,7 +54,7 @@ class SVDClassifier(BaseEstimator, ClassifierMixin):
         X, y = check_X_y(X, y)
         self.categories = unique_labels(y)
         
-        def getApproxBasis(X_train, y_train, category):
+        def get_approx_basis(X_train, y_train, category):
             # get examples with category 'category'
             cat_indx = [y == category for y in y_train] 
             cat_X = X_train[cat_indx]
@@ -66,12 +66,13 @@ class SVDClassifier(BaseEstimator, ClassifierMixin):
             left_basis = U[:,:self.k]
             return left_basis
         # find basis for each categories
-        category_basis_matrices = [getApproxBasis(X, y, k) for k in categories]
+        category_basis_matrices = [get_approx_basis(X, y, k) for k in 
+                                   self.categories]
         # store projection matrix to compute residuals for every category
         self.cat_residuals = [np.identity(X[0].shape[0]) - 
                               np.matmul(category_basis_matrices[k], 
                                         category_basis_matrices[k].T) 
-                              for k in categories]
+                              for k in self.categories]
         return self
 
     def predict(self, X):
